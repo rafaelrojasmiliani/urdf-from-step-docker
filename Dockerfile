@@ -1,5 +1,9 @@
 FROM ros@sha256:ce590ec63b9707a79a71137c3d019d9142717e6518644bf14d5c8f9c5fbb65b0
 
+# Updating outdated repository signatures
+ADD https://raw.githubusercontent.com/ros/rosdistro/master/ros.key /tmp/ros.key
+RUN apt-key add /tmp/ros.key
+
 #ros:noetic-ros-core-focal  
 
 # Set some environment variables for the GUI
@@ -43,14 +47,14 @@ RUN ./configure && make -j4 && make install
 ############################################################
 WORKDIR /occt
 
-RUN wget 'https://git.dev.opencascade.org/gitweb/?p=occt.git;a=snapshot;h=cec1ecd0c9f3b3d2572c47035d11949e8dfa85e2;sf=tgz' -O occt-7.7.2.tgz 
+RUN wget 'https://github.com/Open-Cascade-SAS/OCCT/archive/cec1ecd0c9f3b3d2572c47035d11949e8dfa85e2.tar.gz' -O occt-7.7.2.tgz
 
 RUN ls
 
 RUN tar -xvzf occt-7.7.2.tgz # >> extracted_occt772_files.txt
-WORKDIR  /occt/occt-cec1ecd
+WORKDIR  /occt/OCCT-cec1ecd0c9f3b3d2572c47035d11949e8dfa85e2
 RUN mkdir cmake-build
-WORKDIR /occt/occt-cec1ecd/cmake-build
+WORKDIR /occt/OCCT-cec1ecd0c9f3b3d2572c47035d11949e8dfa85e2/cmake-build
 
 RUN cmake -DINSTALL_DIR=/opt/build/occt772 -DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF ..
 RUN make -j4
@@ -106,17 +110,16 @@ WORKDIR /output_ros_urdf_packages
 SHELL ["/bin/bash", "-c"] 
 
 
-RUN source /opt/ros/$ROS_DISTRO/setup.bash
-
+RUN /bin/bash -lc "source /opt/ros/$ROS_DISTRO/setup.bash"
 
 
 WORKDIR /ros_ws
 
 
 # catkin build
-RUN source /opt/ros/$ROS_DISTRO/setup.bash && \
+RUN /bin/bash -lc "source /opt/ros/$ROS_DISTRO/setup.bash && \
     catkin init && \
-    catkin clean -y 
+    catkin clean -y" 
 
 WORKDIR /ros_ws/src
 
@@ -130,8 +133,7 @@ RUN git rev-parse --short HEAD
 WORKDIR /ros_ws
 
 
-RUN source /opt/ros/$ROS_DISTRO/setup.bash && \
-    catkin build
+RUN /bin/bash -lc "source /opt/ros/$ROS_DISTRO/setup.bash && catkin build"
 
 
 # Always source ros_catkin_entrypoint.sh when launching bash (e.g. when attaching to container)
